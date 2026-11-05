@@ -65,10 +65,19 @@ export default async function CustomerMenuPage({
     orderBy: { position: 'asc' },
   });
 
+  const tableOrders = await prisma.order.findMany({
+    where: {
+      restaurantId: restaurant.id,
+      tableId: table.id,
+      status: { not: "closed" },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <main className="min-h-screen bg-stone-50 text-stone-900 font-sans pb-24">
       {/* O Cabeçalho Reativo entra aqui */}
-      <CartHeader restaurant={restaurant} table={table} />
+      <CartHeader restaurant={restaurant} table={table} tableOrders={tableOrders} />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

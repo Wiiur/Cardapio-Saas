@@ -15,6 +15,7 @@ model Restaurant {
   coverUrl        String?
   primaryColor    String?
   isActive        Boolean            @default(true)
+  showTableTotal  Boolean            @default(true)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   
