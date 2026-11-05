@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  slug            String             @unique
+  logoUrl         String?
+  coverUrl        String?
+  primaryColor    String?
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  
+  members         RestaurantMember[]
+  tables          Table[]
+  categories      Category[]
+  products        Product[]
+  orders          Order[]
+}
+
+model RestaurantMember {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String     @db.ObjectId
+  userId       String
+  role         String     // "owner", "manager", "staff"
+  createdAt    DateTime   @default(now())
+  
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model Table {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String     @db.ObjectId
+  name         String
+  slug         String
+  qrToken      String     @unique
+  isActive     Boolean    @default(true)
+  
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  orders       Order[]    // ESTA É A ÚNICA LINHA NOVA AQUI
+}
+
+model Category {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String     @db.ObjectId
+  name         String
+  description  String?
+  position     Int
+  isActive     Boolean    @default(true)
+  
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  products     Product[]
+}
+
+type Addon {
+  id          String  @map("_id") @db.ObjectId
+  name        String
+  price       Int
+  isRequired  Boolean @default(false)
+  minQuantity Int     @default(0)
+  maxQuantity Int     @default(1)
+  available   Boolean @default(true)
+}
+
+model Product {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String     @db.ObjectId
+  categoryId   String     @db.ObjectId
+  name         String
+  description  String?
+  price        Int
+  imageUrl     String?
+  available    Boolean    @default(true)
+  position     Int
+  
+  addons       Addon[]
+  
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  category     Category   @relation(fields: [categoryId], references: [id])
+}
+
+type OrderItemAddon {
+  addonId      String @map("_id") @db.ObjectId
+  nameSnapshot String
+  unitPrice    Int
+  quantity     Int
+}
+
+type OrderItem {
+  productId    String @map("_id") @db.ObjectId
+  nameSnapshot String
+  unitPrice    Int
+  quantity     Int
+  notes        String?
+  addons       OrderItemAddon[]
+}
+
+model Order {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String      @db.ObjectId
+  tableId      String      @db.ObjectId // ESTE CAMPO DEVE EXISTIR AQUI!
+  
+  deviceId     String?
+  customerName String?
+  origin       String      @default("qr")
+  waiterId     String?
+  
+  status       String      @default("pending")
+  subtotal     Int
+  total        Int
+  notes        String?
+  orderNumber  Int
+  
+  items        OrderItem[]
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  table        Table       @relation(fields: [tableId], references: [id]) // ESTA É A RELAÇÃO!
+}
